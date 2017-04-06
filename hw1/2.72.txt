@@ -1,0 +1,10 @@
+The conditional test "maxbytes-sizeof(val) >= 0" always succeeds
+because the subtraction is done in unsigned type size_t.
+No matter what the values of the arguments are, the result will
+always be a non-negative integer. 
+
+To solve this problem, we can simply use the following comparison
+test:
+
+if(maxbytes >= sizeof(val))
+	memcpy(buf, (void *) &val, sizeof(val));
