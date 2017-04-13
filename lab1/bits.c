@@ -139,7 +139,14 @@ NOTES:
  *   Rating: 4 
  */
 int bang(int x) {
-  return 2;
+  /*
+  inverts the bits first. And then adds 1. If x was 0, then this will
+  become 0. using & with 1 at end will only activate LSB, which is 0.
+  hence, this will return 0 for x = 0 and 1 for x > 0 and x < 0.  
+  */
+  int invx = ~x;
+  negx = inv + 1;
+  return ((~negx & invx) >> 31) & 1;
 }
 /*
  * bitCount - returns count of number of 1's in word
@@ -149,6 +156,7 @@ int bang(int x) {
  *   Rating: 4
  */
 int bitCount(int x) {
+   
   return 2;
 }
 /* 
@@ -159,7 +167,11 @@ int bitCount(int x) {
  *   Rating: 1
  */
 int bitOr(int x, int y) {
-  return 2;
+/*
+Using the first De Morgan's Law, we have the following result
+*/
+
+  return ~(~x & ~y);
 }
 /*
  * bitRepeat - repeat x's low-order n bits until word is full.
@@ -199,7 +211,11 @@ int fitsBits(int x, int n) {
  *   Rating: 2
  */
 int getByte(int x, int n) {
-  return 2;
+  n>>3;
+  x>>n;
+  int maskl = ~(~1 << n);
+  x = x & maskl;
+  return x;
 }
 /* 
  * isLessOrEqual - if x <= y  then return 1, else return 0 
@@ -209,7 +225,7 @@ int getByte(int x, int n) {
  *   Rating: 3
  */
 int isLessOrEqual(int x, int y) {
-  return 2;
+  return ~(((x+((~y)+1))>>31)&1);
 }
 /* 
  * isPositive - return 1 if x > 0, return 0 otherwise 
@@ -219,7 +235,9 @@ int isLessOrEqual(int x, int y) {
  *   Rating: 3
  */
 int isPositive(int x) {
-  return 2;
+  x>>31;
+  x = ~ (x & 1);
+  return x;
 }
 /* 
  * logicalShift - shift x to the right by n, using a logical shift
@@ -230,7 +248,24 @@ int isPositive(int x) {
  *   Rating: 3 
  */
 int logicalShift(int x, int n) {
-  return 2;
+/* for successfully performing logical shift for n > 0, we need
+   to convert the MSB to 0 and then perform normal right shift.
+   But if n is 0, then we should retain the original MSB.
+
+   So we create the mask by using tester. We activate all the bits
+   except LSB and | it with (!n), which sets the required bit at 
+   the LSB position.
+   To move it where we need it to be, we left shift it by 32.
+   Finally, we and 
+
+*/
+  
+  int tester = !n;
+  tester << 32;
+  tester = tester | (~(~0 << 31));
+  x = x & tester;
+  x >> n;
+  return x;
 }
 /* 
  * tmin - return minimum two's complement integer 
@@ -239,5 +274,12 @@ int logicalShift(int x, int n) {
  *   Rating: 1
  */
 int tmin(void) {
-  return 2;
+/*
+ 0 in binary is all unactivated bits
+ ~0 has all its bits activated and is -1 in decimal
+ Shifting left by 31 bits makes the number 10000... thus resulting
+ in the minimum integer required.
+*/
+
+  return ~0 << 31;
 }
