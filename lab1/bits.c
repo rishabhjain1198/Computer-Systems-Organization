@@ -145,7 +145,7 @@ int bang(int x) {
   hence, this will return 0 for x = 0 and 1 for x > 0 and x < 0.  
   */
   int invx = ~x;
-  negx = inv + 1;
+  int negx = invx + 1;
   return ((~negx & invx) >> 31) & 1;
 }
 /*
@@ -156,8 +156,30 @@ int bang(int x) {
  *   Rating: 4
  */
 int bitCount(int x) {
+/*
+  Firstly, we shift the bits of x by 1 to the right and then
+  set all the even numbered bits to 0. Then, we invert this and add
+  1 to effectively get the negative value, which we then add to the 
+  original x. This basically means that we're getting the difference
+  of the original x and the 1-rightshifted x with even bit deactivated.
+  By doing this, we get the number bits in a two bit number.
+  Then, we throw away every 2nd two bit counts and do it again after
+  shifting by 2. We've effectively taken the bitcount of the lowest two
+  and the 2nd lowest two and added them together to get the bitcount of
+ the lowest four bits.
+  We basically repeat the same concept, but add 4 bit counts this time.
+  We multiply by 0x01010101 so that the highest byte is a sum of 
+  its original value, the value of the next lower byte, the 2nd lower
+  byte and the fourth and lowest byte. Then we simply shift by 24
+  to get our answer into the LSB position.
+
+*/
    
-  return 2;
+  /* 
+     x = x + ~(((x >> 1) & 0x55555555)) + 1;
+     x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
+     return (((x + (x >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
+*/
 }
 /* 
  * bitOr - x|y using only ~ and & 
@@ -200,7 +222,16 @@ int bitRepeat(int x, int n) {
  *   Rating: 2
  */
 int fitsBits(int x, int n) {
-  return 2;
+/* 
+ first we calculate how many high order bits are remaining after
+ using n low order bits. Then we fill the high order bits with the 
+ same value as the sign bit of x. Then we check whether we were
+ successful in recreating the number or not using !(NEW ^ x).
+*/
+ int r, c;
+ c = 33+ ~n;
+ r = !(((x << c) >> c) ^ x);
+ return r; 
 }
 /* 
  * getByte - Extract byte n from word x
@@ -211,11 +242,16 @@ int fitsBits(int x, int n) {
  *   Rating: 2
  */
 int getByte(int x, int n) {
-  n>>3;
-  x>>n;
-  int maskl = ~(~1 << n);
-  x = x & maskl;
-  return x;
+/* 
+  multiply n by 8 to get number of bits. Do the required
+  shift to get the required bits at the LSB positions. 
+  Create a mask which can deactivate all bits except the 
+  required ones and & it with x. Then return x.
+
+*/
+ int tem = ~(~1 << (n<<3));
+  x = x>>n;
+  return x & tem;
 }
 /* 
  * isLessOrEqual - if x <= y  then return 1, else return 0 
@@ -225,7 +261,16 @@ int getByte(int x, int n) {
  *   Rating: 3
  */
 int isLessOrEqual(int x, int y) {
-  return ~(((x+((~y)+1))>>31)&1);
+/* 
+  Main strategy is to subtract the numbers and see if the answer is
+  negative. We subtract by converting one number to negative by
+  inverting it and adding one, and then adding that to the other 
+  number. We move the MSB to the LSB position and then deactivate
+  all the other bits. The answer we have now tells us whether the 
+  y number is greater than x. To give the correct output, we XOR with
+  1 to toggle the answer.
+*/
+  return (((x+((~y)+1))>>31)&1)^1;
 }
 /* 
  * isPositive - return 1 if x > 0, return 0 otherwise 
@@ -235,8 +280,14 @@ int isLessOrEqual(int x, int y) {
  *   Rating: 3
  */
 int isPositive(int x) {
+
+ /*
+  Move the MSB to the LSB position. Deactivate all the other bits by
+  & with 1. Now x is 1 if it is negative otherwise 0. To toggle this
+  answer, we XOR with 1.
+ */
   x>>31;
-  x = ~ (x & 1);
+  x =  (x & 1) ^ 1;
   return x;
 }
 /* 
@@ -256,12 +307,12 @@ int logicalShift(int x, int n) {
    except LSB and | it with (!n), which sets the required bit at 
    the LSB position.
    To move it where we need it to be, we left shift it by 32.
-   Finally, we and 
+   Finally, we & with the mask, and move the bits where they need to be.
 
 */
   
   int tester = !n;
-  tester << 32;
+  tester << 31;
   tester = tester | (~(~0 << 31));
   x = x & tester;
   x >> n;
