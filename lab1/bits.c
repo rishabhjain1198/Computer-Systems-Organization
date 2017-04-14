@@ -297,7 +297,7 @@ int isPositive(int x) {
   so we toggle it by bang to tell us whether it is positive or not.
  */
     
-  return !((x&(1<<31)) | !x)
+  return !((x&(1<<31)) | !x);
 }
 /* 
  * logicalShift - shift x to the right by n, using a logical shift
