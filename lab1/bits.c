@@ -166,20 +166,29 @@ int bitCount(int x) {
   Then, we throw away every 2nd two bit counts and do it again after
   shifting by 2. We've effectively taken the bitcount of the lowest two
   and the 2nd lowest two and added them together to get the bitcount of
- the lowest four bits.
+  the lowest four bits.
   We basically repeat the same concept, but add 4 bit counts this time.
-  We multiply by 0x01010101 so that the highest byte is a sum of 
-  its original value, the value of the next lower byte, the 2nd lower
-  byte and the fourth and lowest byte. Then we simply shift by 24
-  to get our answer into the LSB position.
-
+  By repeating this method, we get the sum of all the activated bits.
 */
-   
-  /* 
-     x = x + ~(((x >> 1) & 0x55555555)) + 1;
-     x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
-     return (((x + (x >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
-*/
+    
+    //first we create the masks
+    
+    int firsts = 0x55 + (0x55 << 8 ) + (0x55 << 16) + (0x55 << 24); // 01010101...
+    int seconds = 0x33 + (0x33 << 8 ) + (0x33 << 16) + (0x33 << 24); // 00110011...
+    int thirds = 0x0f + (0x0f << 8 )  + (0x0f << 16) + (0x0f << 24); // 00001111...
+    int fourths = 0xff + (0xff << 16); // 0000000011111111...
+    int fifths = 0xff + (0xff << 8); // 00000000000000001111111...
+    
+    // We now add the zeros and shift right so we can get the
+    // correct sum in one integer
+    
+    sum = (x & firsts) + ((x >> 1) & firsts);
+    sum = (sum & seconds) + ((sum >> 2) & seconds);
+    sum = (sum + (sum >> 4)) & thirds ;
+    sum = (sum + (sum >> 8)) & fourths ;
+    sum = (sum + (sum >> 16)) & fifths ;
+    
+    return sum;
 }
 /* 
  * bitOr - x|y using only ~ and & 
@@ -249,8 +258,8 @@ int getByte(int x, int n) {
   required ones and & it with x. Then return x.
 
 */
- int tem = ~(~1 << (n<<3));
-  x = x>>n;
+ int tem = ~(~1 << (n<<=3));
+  x >>= n;
   return x & tem;
 }
 /* 
@@ -282,13 +291,13 @@ int isLessOrEqual(int x, int y) {
 int isPositive(int x) {
 
  /*
-  Move the MSB to the LSB position. Deactivate all the other bits by
-  & with 1. Now x is 1 if it is negative otherwise 0. To toggle this
-  answer, we XOR with 1.
+  First, we deactivate all the bits except the MSB by using & on x
+  and the mask 100000... Then we | it with !x to check if x is 0.
+  The result we get tells us whether the number is negative or 0,
+  so we toggle it by bang to tell us whether it is positive or not.
  */
-  x>>31;
-  x =  (x & 1) ^ 1;
-  return x;
+    
+  return !((x&(1<<31)) | !x)
 }
 /* 
  * logicalShift - shift x to the right by n, using a logical shift
