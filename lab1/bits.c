@@ -182,7 +182,7 @@ int bitCount(int x) {
     // We now add the zeros and shift right so we can get the
     // correct sum in one integer
     
-    sum = (x & firsts) + ((x >> 1) & firsts);
+    int sum = (x & firsts) + ((x >> 1) & firsts);
     sum = (sum & seconds) + ((sum >> 2) & seconds);
     sum = (sum + (sum >> 4)) & thirds ;
     sum = (sum + (sum >> 8)) & fourths ;
@@ -321,10 +321,10 @@ int logicalShift(int x, int n) {
 */
   
   int tester = !n;
-  tester << 31;
+  tester <<= 31;
   tester = tester | (~(~0 << 31));
   x = x & tester;
-  x >> n;
+  x >>= n;
   return x;
 }
 /* 
