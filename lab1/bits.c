@@ -219,7 +219,45 @@ Using the first De Morgan's Law, we have the following result
  *   Rating: 4
  */
 int bitRepeat(int x, int n) {
-  return 2;
+/*
+ First we need to deactivate all the unnecessary bits in x.
+*/
+  int mask = (~0 << (n-1));
+  mask <<= 1;
+  mask = ~mask; 
+  x = x & mask;
+  int y = x;
+ 
+  int checker = -!(n/32);
+  x <<= n & checker;
+  y = x | y;
+  x = y;
+  n = n * 2;
+  
+  checker = -!(n/32);
+  x <<= n & checker;
+  y = x | y;
+  x = y;
+  n = n * 2;
+  
+  checker = -!(n/32);
+  x <<= n & checker;
+  y = x | y;
+  x = y;
+  n = n * 2;
+  
+  checker = -!(n/32);
+  x <<= n & checker;
+  y = x | y;
+  x = y;
+  n = n * 2;
+  
+  checker = -!(n/32);
+  x <<= n & checker;
+  y = x | y;
+  x = y;
+
+  return x;
 }
 /* 
  * fitsBits - return 1 if x can be represented as an 
@@ -258,9 +296,9 @@ int getByte(int x, int n) {
   required ones and & it with x. Then return x.
 
 */
- int tem = ~(~1 << (n<<=3));
-  x >>= n;
-  return x & tem;
+ int mask = ~(~0 << 8);
+ n<<=3;
+  return (x>>n) & mask;
 }
 /* 
  * isLessOrEqual - if x <= y  then return 1, else return 0 
@@ -276,10 +314,40 @@ int isLessOrEqual(int x, int y) {
   inverting it and adding one, and then adding that to the other 
   number. We move the MSB to the LSB position and then deactivate
   all the other bits. The answer we have now tells us whether the 
-  y number is greater than x. To give the correct output, we XOR with
-  1 to toggle the answer.
+  y number is greater than x. To give the correct output, we bang
+  it. But we also need to account for the corner case of x being
+  T_MIN. We do that by performing a set of operations which would
+  cause our final mask to be 1 if x is that value and 0 otherwise.
 */
-  return (((x+((~y)+1))>>31)&1)^1;
+
+/*
+  ATTEMPT 1
+  int z = !(~((~x << 1) | 1));
+  return (!(((y+((~x)+1))>>31)&1)) | z;
+ 
+ But this doesn't work properly because of overflow.
+ We account for that by separating the sign and the difference.
+*/
+
+  int sign, isLess, dif, equal, isLessorEqual;
+
+  sign = x ^ y;
+  isLess = ~sign;
+  dif = y + (~x + 1);
+
+  equal = !dif;
+
+  sign = sign & x;
+  
+  dif = ~dif;
+  
+  isLess = isLess & dif;
+  isLess = isLess | sign;
+  isLess = isLess & (1 << 31);
+
+  isLessorEqual = (!!isLess) | (equal);
+
+  return isLessorEqual;  
 }
 /* 
  * isPositive - return 1 if x > 0, return 0 otherwise 
@@ -308,7 +376,8 @@ int isPositive(int x) {
  *   Rating: 3 
  */
 int logicalShift(int x, int n) {
-/* for successfully performing logical shift for n > 0, we need
+/* 
+   for successfully performing logical shift for n > 0, we need
    to convert the MSB to 0 and then perform normal right shift.
    But if n is 0, then we should retain the original MSB.
 
@@ -316,15 +385,20 @@ int logicalShift(int x, int n) {
    except LSB and | it with (!n), which sets the required bit at 
    the LSB position.
    To move it where we need it to be, we left shift it by 32.
-   Finally, we & with the mask, and move the bits where they need to be.
-
+   Finally, we & with the mask, and move the bits where 
+   they need to be.
 */
   
   int tester = !n;
   tester <<= 31;
-  tester = tester | (~(~0 << 31));
-  x = x & tester;
+  int tempMask = ~(~0 << 31);
+  //tester = tester | tempMask;
+  int secondMask = tempMask;  
+  secondMask >>= n;
+  secondMask = secondMask | (1 << (31 + ~n + 1));
+  secondMask = secondMask | tester;
   x >>= n;
+  x = x & secondMask;
   return x;
 }
 /* 
