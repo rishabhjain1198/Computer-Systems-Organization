@@ -221,6 +221,28 @@ Using the first De Morgan's Law, we have the following result
 int bitRepeat(int x, int n) {
 /*
  First we need to deactivate all the unnecessary bits in x.
+ We do this by creating a mask which only has n LSB bits activated.
+ Then, we & it with x to successfully have only the bits required to 
+ repeat in x. 
+ 
+ The main strategy to create the required word is to move the bits
+ to the left and then add more bits to the vacated bit spaces.
+ We do this 5 times because if n = 1, we will need to shift left
+ 5 times. Basically, we move the bits to the left by the length
+ of the bits to be added. Then we add the bits by using |. Finally
+ for the next iteration, we set x = y, so that we need less 
+ iterations.
+
+ However, this calls for the problem of shifting by a value larger
+ than the word size. We accomodate for this by using the checker
+ variable. The aim is to have checker set to -1 if n < 32 else it
+ is 0. We & n with checker before shifting so that it becomes 0 
+ if shifting would give undefined behaviour. We get the checker
+ by using division. If n is less than 32, then value becomes 0, else
+ it is 1 or greater than 1. By banging it, if n is less than 32
+ then value becomes 1, else it becomes 0. Then we take negative of
+ the value, hence finally checker becomes -1 if n is less than 32
+ and 0 otherwise.
 */
   int mask = (~0 << (n-1));
   mask <<= 1;
@@ -255,9 +277,8 @@ int bitRepeat(int x, int n) {
   checker = -!(n/32);
   x <<= n & checker;
   y = x | y;
-  x = y;
 
-  return x;
+  return y;
 }
 /* 
  * fitsBits - return 1 if x can be represented as an 
