@@ -1,18 +1,3 @@
-Problem 3.60 Solution:
-
-long loop(long x, int n)
-{
-	long result = 0;
-	long mask;
-	for(mask = 1; mask != 0; mask = mask << n)
-	{
-		result |= (x & mask);
-	}
-	return result;
-}
-
-
-Problem 3.63 Solution:
 
 long switch_prob(long x, long n)
 {
