@@ -1,0 +1,76 @@
+Rishabh Jain
+CS 33, Spring 17
+answers.txt
+
+1. 0x0000000000547920 <arith_driver+336>:	48 8d 04 ad 02 00 00 00\
+lea    0x2(,%rbp,4),%rax   is the instruction which will cause the 
+problem. In this part, if (rbp)*4 + 2 is greater than what can be stored,
+rax will contain the incorrect mathematical result.
+
+2.
+In the data.c file given in the emacs-25.2 source folder, we find that 
+'most-negative-fixnum' has the value of Vmost_negative_fixnum, which in
+turn contained value of MOST_NEGATIVE_FIXNUM. This is defined to be
+-1 - MOST_POSITIVE_FIXNUM  in lisp.h .
+
+MOST_POSITIVE_FIXNUM is defined to be EMACS_INT_MAX << INTTYPEBITS. In 
+that same file, we find that INTTYPEBITS has been defined to be 2. 
+EMACS_INT_MAX contained the value 0x7fffffffffffffff. By right shifting
+this by 2, we get 0x1fffffffffffffff, which is 2305843009213693951.
+By taking negative of this, and subtracting 1, we get:
+-2305843009213693952
+
+3. 
+If the two maximum possible integers inlisp are multiplied, the result
+will definitely cause an overflow. In data.c, we see that emacs handles
+multiplication overflows by using a mask using INTMASK. 
+answer = product & INTMASK;
+According to lisp.h, INTMASK contains the value 0x3fffffffffffffff.
+Since overflow results in 0x1, masking it with & with INTMASK will not
+make any difference in this case. Hence, final result will be 0x1.
+
+4.
+The entire idea behind fwrapv is that whenever overflow occurs,
+the values should wraparound. This eliminates any need for checking for
+overflows. However, this also puts the responsibility on the user to be
+careful about the values they use and be apprehensive about the result
+they get because of the wraparound of fwrapv.
+
+5.
+
+
+(gdb) backtrace
+#0  0x00007ffff16da1d7 in raise () at /lib64/libc.so.6
+#1  0x00007ffff16db8c8 in abort () at /lib64/libc.so.6
+#2  0x00007ffff1719f07 in __libc_message () at /lib64/libc.so.6
+#3  0x00007ffff1721503 in _int_free () at /lib64/libc.so.6
+#4  0x00000000005d8258 in tzfree (tz=<optimized out>, tz@entry=0x147f260)
+    at time_rz.c:194
+#5  0x0000000000556454 in format_time_string (tz=0x147f260) at editfns.c:139
+#6  0x0000000000556454 in format_time_string (format=0x14710f0 "%Y-%m-%d %H:%M:%S %Z", formatlen=20, t=..., zone=zone@entry=21491732, tmp=<optimized out>, 
+    tmp@entry=0x7fffffffd6d0) at editfns.c:2096
+#7  0x0000000000556582 in Fformat_time_string (format_string=<optimized out>, timeval=<optimized out>, zone=21491732) at editfns.c:2049
+#8  0x000000000055ac25 in eval_sub (form=<optimized out>) at eval.c:2178
+#9  0x000000000055aa34 in eval_sub (form=form@entry=16921443) at eval.c:2160
+
+
+By looking at the above backtrace, we realize that the problem probably
+occurs in the time_rz.c in the lib folder. I opened it and looked at the
+tzfree function:
+
+/* Free a time zone.  */
+void
+tzfree (timezone_t tz)
+{
+  if (tz != local_tz)
+    while (tz)
+      {
+        timezone_t next = tz->next;
+        free (tz);
+        tz = next;
+      }
+}
+
+The function tries to free the allocated memory using the free keyword.
+The problem occurs when the function attempts to free the memory allocated
+to the tz variable. 

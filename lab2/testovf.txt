@@ -1,0 +1,54 @@
+Rishabh Jain
+CS 33, Spring 17
+testovf.txt
+
+
+First, I ran gcc with -S -O2 flags. I got the following assembly code:
+
+	xorl	%eax, %eax
+	ret
+
+When we use just the -O2 flag, GCC knows that there is a definite
+integer overflow, hence it returns 0 without any further calculations.
+
+Assembly code from running gcc with -S -O2 -fwrapv flags:
+
+	movabsq	$9223372036854775807, %rax
+	addq	%rdi, %rax
+	cmpq	%rax, %rdi
+	setg	%al
+	ret
+
+Upon using the fwrapv flag, we advise the gcc compiler to do the computation
+even if there is an integer overflow, and do wraparound if there is one.
+Hence, in this case, the assembly code generated actually does some
+computation and returns the result accordingly.
+
+Finally, I ran gcc with -S -O2 -fsanitize=undefined flags:
+
+.LFB0:
+	pushq	%rbp
+	pushq	%rbx
+	movabsq	$9223372036854775807, %rdx
+	movq	%rdi, %rbp
+	movq	%rdi, %rbx
+	subq	$8, %rsp
+	addq	%rdx, %rbp
+	jo	.L6
+.L2:
+	cmpq	%rbp, %rbx
+	setg	%al
+	addq	$8, %rsp
+	popq	%rbx
+	popq	%rbp
+	ret
+.L6:
+	movq	%rdi, %rsi
+	movl	$.Lubsan_data0, %edi
+	call	__ubsan_handle_add_overflow
+	jmp	.L2
+
+When we give the fsanitize=undefined flag, the assembly code generated
+indicates that if there is an overflow, a function named 
+__ubsan_handle_add_overflow will be called. In case there is no overflow,
+the assembly code will yield the same output.
