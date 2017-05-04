@@ -71,6 +71,45 @@ tzfree (timezone_t tz)
       }
 }
 
-The function tries to free the allocated memory using the free keyword.
+The function tries to free the memory for the tz instance of type timezone_t
+using the free keyword.
 The problem occurs when the function attempts to free the memory allocated
 to the tz variable. 
+In my attempt to trace the memory allocation of tz, I realized that it 
+occurs in the tzlookup function in src/editfns.c
+The following is an excerpt from that function:
+
+ timezone_t new_tz;
+
+  if (NILP (zone))
+    return local_tz;
+  else if (EQ (zone, Qt))
+    {
+      
+      zone_string = "UTC0";
+      new_tz = utc_tz;
+    }
+  else
+    {
+      if (EQ (zone, Qwall))
+        zone_string = 0;
+      else if (STRINGP (zone))
+        zone_string = SSDATA (zone);
+      else if (INTEGERP (zone))
+        {
+          EMACS_INT abszone = eabs (XINT (zone)), hour = abszone / (60 * 60);
+          int min = (abszone / 60) % 60, sec = abszone % 60;
+          sprintf (tzbuf, tzbuf_format, &"-"[XINT (zone) < 0], hour, min, sec);
+          zone_string = tzbuf;
+        }
+      else
+        xsignal2 (Qerror, build_string ("Invalid time zone specification"),
+                  zone);
+      new_tz = xtzalloc (zone_string);
+    }
+
+The final line of this excerpt is what allocated the memory to that instance
+of tz which is being freed by tzfree. However, this allocation is a
+conditional event, ie. sometimes the memory which tzfree might be trying
+to release may never have been allocated at all. This can result in a problem
+for the machine and cause a crash in the program.

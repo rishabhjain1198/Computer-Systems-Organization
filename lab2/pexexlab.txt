@@ -35,10 +35,14 @@ info registers $(name-of-register)
 
 In order to evaluate what went in memory, I took note of all the values in
 the registers mentioned in the command. Then I analyzed them by hand in 
-order to get to know what changes were made at what memory locations.
+order to get to know what changes were made at what memory locations according
+to what the stack pointer register rsp held and what the first operand register
+contained.
 
-After every jump instruction, I checked the instruction register to check
-whether a change was caused in it or not.
+After every jump instruction, I checked the instruction register rip to check
+whether a change was caused in it or not. Later, I realized that I can simply
+look at the first column of the gdb assembly output to see if the jump was
+executed or not, and I could update the value of rip accordingly.
 
 After every push or pop instruction, I checked the rsp register to check
 what new value it contained.
@@ -48,4 +52,6 @@ instructions outputted by gdb into the text file, and added the analyzed
 register values manually as well.
 
 After looking at the source code of Ftimes, I realized that I only need
-to look at the assembly instructions till the end of arith_driver.
+to look at the assembly instructions till the end of arith_driver. So once
+the gdb assembly instructions reached the source code of another file, I 
+realized that I can stop stepping into further lines of code and quit gdb.
