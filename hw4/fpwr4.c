@@ -1,6 +1,6 @@
-float u2f(unsigned in)
+static float u2f(unsigned u)
 {
-	return *((float*)&in);
+	return *((float*)&u);
 }
 
 float fpwr4(int x)
