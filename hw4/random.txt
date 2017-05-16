@@ -1,0 +1,50 @@
+Rishabh Jain
+CS 33, Spring 2017
+random.txt
+
+2.89
+
+A. True
+When an int is casted to double, it will retain its exact numerical value.
+
+When both the int and double are casted to float, the numbers might be rounded,
+but the exact same rounding will occur, and hence the numbers will 
+definitely be equal.
+
+No overflow can occur, and so -frwapv will be redundant.
+
+B. False
+This will not always be true because there are some cases in which an integer
+subtraction will overflow, but a double subtraction will be conducted without
+any hitches.
+
+Eg: Let x and y be INT_MAX and -15 respectively. x-y will overflow to INT_MIN+14, so casting 
+it to a double will lead to a double reperesentation of that overflowed value.
+However, casting them to double individually first will avoid the overflow and
+lead to a correct result in double representation.
+
+-frwapv is required here because overflow is involved and we predicted the
+result of the overflow.
+
+C. True
+This will always be true because although floating point addition is not
+associative, the max values which they can contain will be much less than the precision double has. 
+
+-fwrapv is redundant here.
+
+D. False
+Floating point operations are not associative,
+hence rounding might cause inconsistencies in the result.
+
+Eg:
+x = 2^31 + 1;
+y = 2^31 + 1;
+z = 2^31 + 2^7;
+
+-fwrapv is redundant here.
+
+E. False
+If x is 0, division by 0 is not allowed, and will result in NaN, thus LHS
+will become NaN, and the result will then be 0.  
+
+-fwrapv is redundant here.

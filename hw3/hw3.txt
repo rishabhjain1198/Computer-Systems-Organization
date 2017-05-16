@@ -1,0 +1,76 @@
+Rishabh Jain
+CS 33, Spring 17
+hw3.txt
+
+3.67
+A. 
+|	|
+|	|	<---	
+|	|
+ -------   
+|	|	<---	8 bytes: z
+ -------
+|	|	<---	8 bytes: rsp-80
+ -------
+|	|	<---	8 bytes: y
+ -------
+|	|	<---	8 bytes: x
+ -------
+
+B.
+It passes the location of the start of the struct strB r in order to let
+process store values there.
+
+C.
+The function process accesses the values of the strA s using the stack
+pointer rsp. Since it points to the start of the struct, the process
+simply uses "dereferencing" in order to retrieve the values.
+
+D.
+It sets the fields of struct strB r using rdi. This is the value passed into
+process by eval, and by "dereferencing" it, process can set the values it 
+needs to.
+
+E.
+|	|
+|	|
+ -------
+|	|	<--- 8 bytes: z
+ -------
+|	|	<--- 8 bytes: x
+ -------
+|	|	<--- 8 bytes: y
+ -------
+|	|
+|	|	<--- 32 bytes: unused
+|	|
+ -------
+|	|	<--- 8 bytes: z
+ -------
+|	|	<--- 8 bytes: &z
+ -------
+|	|	<--- 8 bytes: y
+ -------
+|	|	<--- 8 bytes: x
+ -------
+
+F.
+The basic principle is that the struct is abstractly created in the stack and
+the location to it is passed into the function which requires it's values.
+
+
+3.70
+A.
+
+Offsets:
+
+e1.p -> 0
+e1.y -> 8
+e2.x -> 0
+e2.next -> 8
+
+B.
+16 bytes
+
+C.
+up->e2.x = *(up->e2.next->e1.p) - up->e2.next->e1.y;

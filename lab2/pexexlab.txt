@@ -1,0 +1,57 @@
+Rishabh Jain
+CS 33, Spring 17
+Pexex Lab
+
+I initialized gdb with the version of emacs provided to us using:
+
+gdb ~eggert/bin64/bin/emacs-25.2
+
+Then, according to the instructions provided in the pexex lab specification,
+I enabled the displaying of assembly code of each line using:
+
+set disassemble-next-line on
+
+Then, I ran the program with the appropriate flags:
+
+r -Q -batch -eval '(print (* 1250284240 -1844255039))'
+
+I realized that to analyze the program properly, I need to set a breakpoint.
+Looking at the spec again, I noticed that I need to analyze the Ftimes
+function. So, I set a breakpoint at that point:
+
+break Ftimes
+
+Then I ran the program again using the same command.
+
+First I tried to go through the instructions using the step command,
+but I realized I needed to step into the functions which Ftimes calls.
+Thus, I realized that I needed to use the step into command. This
+can be abbreviated to si.
+
+After almost every assembly instruction, according to the command used,
+I analyze the register values using:
+
+info registers $(name-of-register)
+
+In order to evaluate what went in memory, I took note of all the values in
+the registers mentioned in the command. Then I analyzed them by hand in 
+order to get to know what changes were made at what memory locations according
+to what the stack pointer register rsp held and what the first operand register
+contained.
+
+After every jump instruction, I checked the instruction register rip to check
+whether a change was caused in it or not. Later, I realized that I can simply
+look at the first column of the gdb assembly output to see if the jump was
+executed or not, and I could update the value of rip accordingly.
+
+After every push or pop instruction, I checked the rsp register to check
+what new value it contained.
+
+To get the values into trace.tr, I simply copy pasted the assembly
+instructions outputted by gdb into the text file, and added the analyzed
+register values manually as well.
+
+After looking at the source code of Ftimes, I realized that I only need
+to look at the assembly instructions till the end of arith_driver. So once
+the gdb assembly instructions reached the source code of another file, I 
+realized that I can stop stepping into further lines of code and quit gdb.
