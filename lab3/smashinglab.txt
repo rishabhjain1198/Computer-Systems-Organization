@@ -591,7 +591,8 @@ _main:
       46:	c3 	retq
       47:	e8 00 00 00 00 	callq	0 <_main+4C>
 
-I then simply copy this bytecode and append it to tester.txt
+Using the hex2raw program given on ccle, I convert the hexcode to bytecode.
+This bytecode is then appended to my exploit text file, tester.txt.
 
 I test out the exploit by:
 
