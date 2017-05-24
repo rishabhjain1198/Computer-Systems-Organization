@@ -631,7 +631,18 @@ _main:
 
 Using the hex2raw program given on ccle, I convert the hexcode 
 to bytecode.
+
+I first copy the hexcode into the file hexcode.txt manually.
+
+Then I do the following command:
+
+./hex2raw < hexcode.txt > bytecode.txt
+
 This bytecode is then appended to my exploit text file, tester.txt.
+
+cat bytecode.txt >> tester.txt
+
+I remove the extra newline character added due to the append operator.
 
 I test out the exploit by:
 
