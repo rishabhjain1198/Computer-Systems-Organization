@@ -18,15 +18,24 @@ int main(int argc, char** argv)
 		exit(1);
 	}
 	
-	int nthreads = atoi(argv[1]);
+	int nnthreads = atoi(argv[1]);
 
-	if(!(nthreads > 0))
+	if(!(nnthreads > 0))
 	{
 		printf("Argument not correct \n");
 		exit(1);
 	}
 
-	if(nthreads == 0)
+	int nthreads = 1;
+	int i = 0;
+	for(i = 0; i < nnthreads; i++)
+	{
+		nthreads = nthreads * 2;
+	}
+	
+	nthreads = nthreads - 2;
+
+	if(nnthreads == 1)
 	{
 		printf("Thread 0 done\n");
 		exit(0);
@@ -57,8 +66,9 @@ void *thread(void *vargp) /* Thread routine */
 	struct arg_struct* thiargs = vargp;
 	
 	int thisone = thiargs -> arg2;	
+	int nthreads = thiargs -> arg1;
 
-	if(thisone > ((thiargs -> arg1) / 2))
+	if(thisone >= (nthreads / 2))
 	{
 		printf("Thread %d done\n", thisone);
 		return NULL;
@@ -67,12 +77,12 @@ void *thread(void *vargp) /* Thread routine */
 	pthread_t tidx, tidy;
 
 	struct arg_struct child1;
-	child1.arg1 = thiargs -> arg1;
+	child1.arg1 = nthreads;
 	child1.arg2 = (thisone*2) + 1;
 	pthread_create(&tidx, NULL, thread, (void *)&child1);	
 
 	struct arg_struct child2;
-	child2.arg1 = thiargs -> arg1;
+	child2.arg1 = nthreads;
 	child2.arg2 = (thisone*2) + 2;
 	pthread_create(&tidy, NULL, thread, (void *)&child2);
 
