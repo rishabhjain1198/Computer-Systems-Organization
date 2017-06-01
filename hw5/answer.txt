@@ -1,0 +1,27 @@
+Homework 5
+CS 33, Spring 17
+Rishabh Jain
+answer.txt
+
+----------------------------
+
+12.18
+
+a. safe
+b. safe
+c. unsafe
+
+
+12.24
+
+And sure enough, target.txt was deleted.
+
+All RIO functions take pointers in the arguments. Thus, it really 
+depends on the caller whether it passes the addresses carefully 
+or not. If the caller passes the address of some shared data, then 
+the functions are implicitly non-reentrant. Otherwise, if the caller 
+does not pass address of shared data, then the functions cannot 
+access the shared data, and are thus implicitly reentrant. 
+
+All in all, if we assume the caller functions are careful, the RIO 
+functions are implicitly reentrant, but not explicitly reentrant.
