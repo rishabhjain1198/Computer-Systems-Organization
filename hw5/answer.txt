@@ -7,7 +7,7 @@ answer.txt
 
 12.18
 
-a. safe
+a. unsafe
 b. safe
 c. unsafe
 
