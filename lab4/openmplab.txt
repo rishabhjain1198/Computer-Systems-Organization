@@ -1,0 +1,273 @@
+Rishabh Jain
+CS 33, Spring 17
+Lab 4, OpenMP Lab
+openmplab.txt
+---------------------------------------------------
+
+I start off by scp-ing the openmplab folder obtained from CCLE to the 
+SEASnet server lnxsrv09.seas.ucla.edu. I then log into it using ssh and 
+extract the contents from the tarball by using:
+
+tar xzvf openmplab.tar
+
+Then, I change my directory into it by:
+
+cd openmplab
+
+I examine the func.c file by using vim. I realize that the functions do most 
+of their work in for loops. I try to include omp.h in this file, but then 
+realize that it is already included by the utils.h file. 
+
+Before I start implementing parallelism, I decide to test out the program.
+
+I compile the program and run it by using make check.
+
+I get the following output:
+
+[rishabhj@lnxsrv09 ~/cs33/lab4/openmplab]$ make check
+gcc -o omp  -O3 -fopenmp filter.c main.c func.c util.c -lm
+cp omp filter
+./filter
+FUNC TIME : 0.746037
+TOTAL TIME : 2.478392
+diff --brief correct.txt output.txt
+
+and the diff file is empty, meaning that the output is correct.
+
+In order to make sure that my optimizations have the highest impact on 
+performance, I decide to run gprof on the program to find out which functions 
+impact the program the most.
+
+I compile the program with openmp disabled using make seq GPROF=1. I then run 
+gprof on it using gprof seq | less.
+
+I get the following output:
+
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  ms/call  ms/call  name    
+ 53.00      0.45     0.45       27    16.69    16.69  func1
+ 24.73      0.66     0.21                             rand2
+  8.24      0.73     0.07    55886     0.00     0.00  getNeighbors
+  5.89      0.78     0.05        2    25.03    29.93  addSeed
+  2.36      0.80     0.02        2    10.01    10.01  init
+  2.36      0.82     0.02        1    20.02    20.02  dilateMatrix
+  1.18      0.83     0.01  4287732     0.00     0.00  rand1
+  1.18      0.84     0.01        1    10.01    79.98  imdilateDisk
+  1.18      0.85     0.01                             sequence
+  0.00      0.85     0.00   141487     0.00     0.00  elapsed_time
+  0.00      0.85     0.00       60     0.00     0.00  func4
+  0.00      0.85     0.00       17     0.00     4.12  func5
+  0.00      0.85     0.00       16     0.00     0.00  fillMatrix
+  0.00      0.85     0.00       15     0.00     0.00  round
+  0.00      0.85     0.00        6     0.00    11.68  func2
+  0.00      0.85     0.00        1     0.00     0.00  func3
+  0.00      0.85     0.00        1     0.00     0.00  get_time
+
+ %         the percentage of the total running time of the
+time       program used by this function.
+
+cumulative a running sum of the number of seconds accounted
+ seconds   for by this function and those listed above it.
+
+ self      the number of seconds accounted for by this
+seconds    function alone.  This is the major sort for this
+           listing.
+
+
+Since all the functions take up a measurable chunk of time to run, I would 
+need to apply optimizations to all of them. I open up the func.c file using 
+vim and start to work on the functions.
+
+I realize that the basic approach I need to do is call for 
+#pragma omp parallel for
+and add the private clause at the end, with the loop counters being the 
+private variables. In some cases, like the second loop of function1, there 
+are nested loops present, and thus both the loop counters need to be private 
+to maintain correctness of the program.
+Apart from the private clause, a reduction clause would also be required in 
+some cases, in which an accumulator is used. This is so that the correct 
+answer is obtained by the program, irrelevant of the order in which the 
+threads would execute their code. An example of this was the second loop of 
+func2. I did not need to specify shared variables in any of the omp directives 
+because apart from the specified private variables, all the variables need 
+to be shared amongst the threads. By default, openmp keeps the variables 
+shared and so we did not need to specify any additional clause for that.
+
+In func0, I realized that the loop does the same calculation on n every single 
+iteration, so I moved it out of the loop and applied omp using:
+
+#pragma omp parallel for private(i)
+
+After doing this, I compiled and ran the program using make check, and a 
+slight speedup was observed, along with an empty diff file.
+
+However, I ran make check MTRACE=1, and then make checkmem, and to my surprise 
+I found lots of places where memory wasn't freed. Even after tinkering around 
+with other functions, I got the following output:
+
+[rishabhj@lnxsrv09 ~/cs33/lab4/openmplab]$ make checkmem
+mtrace filter mtrace.out || true
+
+Memory not freed:
+-----------------
+           Address     Size     Caller
+0x00000000023320a0   0x2040  at 0x7f01fb93c869
+0x00000000023340f0     0xc0  at 0x7f01fb93c869
+0x00000000023341c0    0x108  at 0x7f01fb93c8b9
+0x00000000023342d0    0x240  at 0x7f01fbe6cc25
+0x0000000002334520    0x240  at 0x7f01fbe6cc25
+0x0000000002334770    0x240  at 0x7f01fbe6cc25
+0x00000000023349c0    0x240  at 0x7f01fbe6cc25
+0x0000000002334c10    0x240  at 0x7f01fbe6cc25
+0x0000000002334e60    0x240  at 0x7f01fbe6cc25
+0x00000000023350b0    0x240  at 0x7f01fbe6cc25
+0x0000000002335300    0x240  at 0x7f01fbe6cc25
+0x0000000002335550    0x240  at 0x7f01fbe6cc25
+0x00000000023357a0    0x240  at 0x7f01fbe6cc25
+0x00000000023359f0    0x240  at 0x7f01fbe6cc25
+0x0000000002335c40    0x240  at 0x7f01fbe6cc25
+0x0000000002335e90    0x240  at 0x7f01fbe6cc25
+0x00000000023360e0    0x240  at 0x7f01fbe6cc25
+0x0000000002336330    0x240  at 0x7f01fbe6cc25
+0x0000000002336580    0x240  at 0x7f01fbe6cc25
+0x00000000023367d0    0x240  at 0x7f01fbe6cc25
+0x0000000002336a20    0x240  at 0x7f01fbe6cc25
+0x0000000002336c70    0x240  at 0x7f01fbe6cc25
+0x0000000002336ec0    0x240  at 0x7f01fbe6cc25
+0x0000000002337110    0x240  at 0x7f01fbe6cc25
+0x0000000002337360    0x240  at 0x7f01fbe6cc25
+0x00000000023375b0    0x240  at 0x7f01fbe6cc25
+0x0000000002337800    0x240  at 0x7f01fbe6cc25
+0x0000000002337a50    0x240  at 0x7f01fbe6cc25
+0x0000000002337ca0    0x240  at 0x7f01fbe6cc25
+0x0000000002337ef0    0x240  at 0x7f01fbe6cc25
+0x0000000002338140    0x240  at 0x7f01fbe6cc25
+0x0000000002338390    0x240  at 0x7f01fbe6cc25
+0x00000000023385e0    0x240  at 0x7f01fbe6cc25
+0x0000000002338830    0x240  at 0x7f01fbe6cc25
+
+I concluded that this is memory used by openmp which the kernel will free 
+by itself after the program exits, which I cannot help. Although this memory 
+is not freed, it is still reachable, and therefore it is not a memory leak.
+
+Hence, I moved along with my optimizations.
+
+In func1, I realized that it would be a big speedup for the program to have 
+index_X and index_Y as private along with the loop counters, and hence I added 
+them to the private clause for the omp directive for the second loop.
+
+In func2, I implemented simple omp for parallelizations for the first and last 
+loops, but in the second one, an accumulator was being used. Thus, I had to 
+specify the reduction using:
+#pragma omp parallel for private(i) reduction(+:sumWeights)
+in order to obtain the correct output.
+
+In func3, a similar approach was used, but since 2 accumulators were being 
+used, the omp directive was:
+#pragma omp parallel for private(i) reduction(+:estimate_x, estimate_y)
+
+In func4, I thought about moving the casting of n to double outside the loop,
+but then realized that its a no-op and would make no difference to the speed.
+However, I tried it, and for some reason it resulted in a slow down (according 
+to the average taken over multiple tests). Hence, I let it remain in the loop 
+and simply added another
+#pragma omp parallel for private(i)
+in order to implement simple parallelism.
+
+In func5, even before I could start with the parallelizations, I could see 
+that I could make some improvements to the program by moving some calculations 
+outside the loops.
+In the first loop, the program calculated n+1 every single time, so I saved 
+that result in a new variable m and used that instead in the loop.
+In the second loop, the computation and casting for 1/((double)(n)) was being 
+done every single time for every iteration, so I decided to move that out and 
+save the result in a new variable dn and use that instead.
+Then I began implementing parallelism using a simple
+#pragma omp parallel for private(i) for the second loop and
+#pragma omp parallel for private(i, j) for the first loop. The variable i 
+has to be private in the first loop because an if statement is used on the 
+state of i, which is set in the very same iteration of the loop, and suppose if
+i is shared, another thread could possibly change the value of i right before 
+the current thread tests it, resulting in a possible unfavourable branching.
+Hence, I set i to private to achieve correct results no matter the ordering of 
+the thread execution.
+
+After implementing these results, I compile the program using:
+make seq && make omp GPROF=1
+
+Upon running omp and then gprof on it, I recieved the following output:
+
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls  ms/call  ms/call  name    
+ 53.00      0.45     0.45       17    26.50    27.41  filter
+ 12.37      0.56     0.11        2    52.56    52.56  rand2
+ 11.19      0.65     0.10                             rand1
+  9.42      0.73     0.08    55886     0.00     0.00  imdilateDisk
+  4.71      0.77     0.04        1    40.05    49.84  init
+  2.36      0.79     0.02        2    10.01    14.72  dilateMatrix
+  1.77      0.81     0.02                             elapsed_time
+  1.77      0.82     0.02                             round
+  1.18      0.83     0.01  4287732     0.00     0.00  get_time
+  1.18      0.84     0.01       17     0.59     0.59  addSeed
+  1.18      0.85     0.01                             getNeighbors
+  0.00      0.85     0.00   141505     0.00     0.00  func5
+  0.00      0.85     0.00       60     0.00     0.00  func4
+  0.00      0.85     0.00       15     0.00     0.00  func3
+  0.00      0.85     0.00       10     0.00     0.00  func1
+  0.00      0.85     0.00        7     0.00    35.68  func2
+
+ %         the percentage of the total running time of the
+time       program used by this function.
+
+cumulative a running sum of the number of seconds accounted
+ seconds   for by this function and those listed above it.
+
+ self      the number of seconds accounted for by this
+seconds    function alone.  This is the major sort for this
+           listing.
+
+calls      the number of times this function was invoked, if
+
+By looking at this, we get to know that the functions which I optimized now 
+use the absolute minimum time out of the all the tasks which the program does.
+
+I make sure that the output of the program is still correct by using:
+
+make check
+
+and get the following output:
+
+[rishabhj@lnxsrv09 ~/cs33/lab4/openmplab]$ make check
+gcc -o omp  -O3 -fopenmp filter.c main.c func.c util.c -lm
+cp omp filter
+./filter
+FUNC TIME : 0.042840
+TOTAL TIME : 1.828722
+diff --brief correct.txt output.txt
+
+The diff file is emptying, confirming the correctness of the program.
+
+In order to compute the exact speedup of the functions used by us, I used 
+the command:
+
+./seq && ./omp
+
+to first run the program without most of our optimizations (since some of 
+our optimizations were not just parallelism, but also moving calculations 
+out of loops) and then compare it with OpenMP enabled. I get the following 
+output:
+
+[rishabhj@lnxsrv09 ~/cs33/lab4/openmplab]$ ./seq && ./omp
+FUNC TIME : 0.738097
+TOTAL TIME : 2.515995
+FUNC TIME : 0.048018
+TOTAL TIME : 2.180024
+
+By computing 0.738097/0.048018, our program achieved a speedup of 15.37x, 
+without losing any correctness.
