@@ -4,8 +4,11 @@
 void func0(double *weights, double *arrayX, double *arrayY, int xr, int yr, int n)
 {
 	int i;
+	double dn = 1/((double)(n));
+
+#pragma omp parallel for private(i)
 	for(i = 0; i < n; i++){
-		weights[i] = 1/((double)(n));
+		weights[i] = dn;
 		arrayX[i] = xr;
 		arrayY[i] = yr;
 	}
@@ -19,11 +22,13 @@ void func1(int *seed, int *array, double *arrayX, double *arrayY,
    	int index_X, index_Y;
 	int max_size = X*Y*Z;
 
+#pragma omp parallel for private(i)
    	for(i = 0; i < n; i++){
    		arrayX[i] += 1 + 5*rand2(seed, i);
    		arrayY[i] += -2 + 2*rand2(seed, i);
    	}
 
+#pragma omp parallel for private(i, j, index_X, index_Y)
    	for(i = 0; i<n; i++){
    		for(j = 0; j < Ones; j++){
    			index_X = round(arrayX[i]) + objxy[j*2 + 1];
@@ -47,12 +52,15 @@ void func2(double *weights, double *probability, int n)
 	int i;
 	double sumWeights=0;
 
+#pragma omp parallel for private(i)
 	for(i = 0; i < n; i++)
    		weights[i] = weights[i] * exp(probability[i]);
 
+#pragma omp parallel for private(i) reduction(+:sumWeights)
    	for(i = 0; i < n; i++)
    		sumWeights += weights[i];
 
+#pragma omp parallel for private(i)
 	for(i = 0; i < n; i++)
    		weights[i] = weights[i]/sumWeights;
 }
@@ -63,6 +71,7 @@ void func3(double *arrayX, double *arrayY, double *weights, double *x_e, double 
 	double estimate_y=0.0;
     int i;
 
+#pragma omp parallel for private(i) reduction(+:estimate_x, estimate_y)
 	for(i = 0; i < n; i++){
    		estimate_x += arrayX[i] * weights[i];
    		estimate_y += arrayY[i] * weights[i];
@@ -77,6 +86,7 @@ void func4(double *u, double u1, int n)
 {
 	int i;
 
+#pragma omp parallel for private(i)
 	for(i = 0; i < n; i++){
    		u[i] = u1 + i/((double)(n));
    	}
@@ -84,21 +94,24 @@ void func4(double *u, double u1, int n)
 
 void func5(double *x_j, double *y_j, double *arrayX, double *arrayY, double *weights, double *cfd, double *u, int n)
 {
-	int i, j;
+	int i, j, m = n-1;
 
+#pragma omp parallel for private(i, j)
 	for(j = 0; j < n; j++){
    		//i = findIndex(cfd, n, u[j]);
    		i = findIndexBin(cfd, 0, n, u[j]);
    		if(i == -1)
-   			i = n-1;
+   			i = m;
    		x_j[j] = arrayX[i];
    		y_j[j] = arrayY[i];
 
    	}
 
+double dn = 1/((double)(n));
+#pragma omp parallel for private(i)
 	for(i = 0; i < n; i++){
 		arrayX[i] = x_j[i];
 		arrayY[i] = y_j[i];
-		weights[i] = 1/((double)(n));
+		weights[i] = dn;
 	}
 }
